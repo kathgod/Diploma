@@ -104,7 +104,7 @@ func CreateRegTable(db *sql.DB) *sql.DB {
 	if err2 != nil {
 		log.Println(err2)
 	}
-	log.Printf("%d rows created CreateSQLTable", rows)
+	log.Printf("%d rows created CreateRegTable", rows)
 	return db
 }
 
@@ -120,7 +120,7 @@ func IfExist(db *sql.DB, segStrInst RegisterStruct) bool {
 }
 
 func AddRecordInRegTable(db *sql.DB, segStrInst RegisterStruct) (int64, *http.Cookie) {
-	query := `INSERT INTO idshortlongurl(login, password, authcoockie, idcoockie, keycoockie) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (login) DO NOTHING`
+	query := `INSERT INTO userRegTable(login, password, authcoockie, idcoockie, keycoockie) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (login) DO NOTHING`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 	stmt, err0 := db.PrepareContext(ctx, query)

@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	_ "github.com/lib/pq"
 	"io"
 	"log"
 	"net/http"

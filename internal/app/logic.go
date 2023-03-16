@@ -33,6 +33,7 @@ func HandParam(name string, flg *string) string {
 	case "DATABASE_URI":
 	case "ACCRUAL_SYSTEM_ADDRESS":
 	}
+	log.Println(res)
 	return res
 }
 

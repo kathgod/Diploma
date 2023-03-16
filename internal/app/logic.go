@@ -51,6 +51,7 @@ type RegisterStruct struct {
 
 func logicPostRegister(r *http.Request) (int, *http.Cookie) {
 	var emptcck *http.Cookie
+
 	rawBsp, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println(postBodyError)
@@ -71,6 +72,7 @@ func logicPostRegister(r *http.Request) (int, *http.Cookie) {
 	}(db)
 	if errDB != nil {
 		log.Println(dbOpenError)
+		log.Println(errDB)
 		return 500, emptcck
 	}
 	db = CreateRegTable(db)

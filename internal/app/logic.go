@@ -30,10 +30,12 @@ func HandParam(name string, flg *string) string {
 	}
 	switch name {
 	case "RUN_ADDRESS":
+		log.Println("RUN_ADDRESS:", res)
 	case "DATABASE_URI":
+		log.Println("DATABASE_URI:", res)
 	case "ACCRUAL_SYSTEM_ADDRESS":
+		log.Println("ACCRUAL_SYSTEM_ADDRESS", res)
 	}
-	log.Println(res)
 	return res
 }
 

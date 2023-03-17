@@ -232,7 +232,7 @@ func GetCckValue(db *sql.DB, segStrInst RegisterStruct) string {
 //---------------------------------------------------------------------------
 
 func logicPostOrders(r *http.Request) int {
-	log.Println("Enter in Logic function PostOrders")
+	//log.Println("Enter in Logic function PostOrders")
 	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
 	defer func(db *sql.DB) {
 		err := db.Close()
@@ -296,6 +296,7 @@ func CreateOrderTable(db *sql.DB) *sql.DB {
 }
 
 func authCheck(r *http.Request, db *sql.DB) bool {
+	log.Println("enter in authCheck function")
 	cck, err := r.Cookie("userId")
 	if err != nil {
 		log.Println("Error1 Coockie check", err)
@@ -311,6 +312,7 @@ func authCheck(r *http.Request, db *sql.DB) bool {
 }
 
 func CheckOrderTable(orderNumber string, db *sql.DB) string {
+	log.Println("enter in CheckOrderTable function")
 	check := new(string)
 	row := db.QueryRow("select authcoockie from orderTable where ordernumber == $1", orderNumber)
 	if err1 := row.Scan(check); err1 != sql.ErrNoRows {
@@ -321,6 +323,7 @@ func CheckOrderTable(orderNumber string, db *sql.DB) string {
 }
 
 func AddRecordInOrderTable(db *sql.DB, r *http.Request, orderNumber string) int64 {
+	log.Println("enter in AddRecordInOrderTable function")
 	query := `INSERT INTO orderTable(ordernumber, authcoockie) VALUES ($1, $2) ON CONFLICT (ordernumber) DO NOTHING`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()

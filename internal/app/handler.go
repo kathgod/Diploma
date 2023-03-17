@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"log"
 	"net/http"
 )
 
@@ -48,7 +47,7 @@ func PostLogin() func(w http.ResponseWriter, r *http.Request) {
 // PostOrders функция загрузки пользователем номера заказа для расчёта
 func PostOrders() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Enter in PostOrders")
+		//log.Println("Enter in PostOrders")
 		resLF := logicPostOrders(r)
 		switch {
 		case resLF == 200:

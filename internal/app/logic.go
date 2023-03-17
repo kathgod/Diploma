@@ -45,6 +45,9 @@ var ResHandParam struct {
 	AccrualSystemAddress string
 }
 
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+
 type RegisterStruct struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
@@ -82,7 +85,7 @@ func logicPostRegister(r *http.Request) (int, *http.Cookie) {
 	var cck *http.Cookie
 	affRows, cck = AddRecordInRegTable(db, segStrInst)
 	if affRows == 0 {
-		if boolFlagExistRecord == true {
+		if boolFlagExistRecord {
 			return 409, emptcck
 		} else {
 			return 500, emptcck
@@ -176,6 +179,9 @@ func createCoockie() *http.Cookie {
 	return cck
 }
 
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+
 func logicPostLogin(r *http.Request) (int, *http.Cookie) {
 	var emptcck *http.Cookie
 	rawBsp, err := io.ReadAll(r.Body)
@@ -201,7 +207,7 @@ func logicPostLogin(r *http.Request) (int, *http.Cookie) {
 		return 500, emptcck
 	}
 	boolFlagExistRecord := IfExist(db, segStrInst)
-	if boolFlagExistRecord == true {
+	if boolFlagExistRecord {
 		cckValue := GetCckValue(db, segStrInst)
 		cck := &http.Cookie{
 			Name:  "userId",
@@ -211,7 +217,6 @@ func logicPostLogin(r *http.Request) (int, *http.Cookie) {
 	} else {
 		return 401, emptcck
 	}
-
 }
 
 func GetCckValue(db *sql.DB, segStrInst RegisterStruct) string {
@@ -222,4 +227,127 @@ func GetCckValue(db *sql.DB, segStrInst RegisterStruct) string {
 	} else {
 		return ""
 	}
+}
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+
+func logicPostOrders(r *http.Request) int {
+	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(db)
+	if errDB != nil {
+		log.Println(dbOpenError)
+		return 500
+	}
+
+	rawBsp, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Println(postBodyError)
+		return 400
+	}
+	orderNumber := string(rawBsp)
+
+	db = CreateOrderTable(db)
+
+	flagAuthUser := authCheck(r, db)
+	if !flagAuthUser {
+		return 401
+	} else {
+		var affrow int64 = -1
+		affrow = AddRecordInOrderTable(db, r, orderNumber)
+		if affrow == 0 {
+			userCoockieCheckOrderTable := CheckOrderTable(orderNumber, db)
+			cck, err := r.Cookie("userID")
+			if err != nil {
+				return 500
+			}
+			if userCoockieCheckOrderTable == cck.Value {
+				return 200
+			} else {
+				return 409
+			}
+		} else {
+			return 202
+		}
+
+	}
+
+}
+
+func CreateOrderTable(db *sql.DB) *sql.DB {
+	query := `CREATE TABLE IF NOT EXISTS orderTable(ordernumber text, authcoockie text)`
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancelfunc()
+	res, err := db.ExecContext(ctx, query)
+	if err != nil {
+		log.Println(err)
+	}
+	rows, err2 := res.RowsAffected()
+	if err2 != nil {
+		log.Println(err2)
+	}
+	log.Printf("%d rows created CreateRegTable", rows)
+	return db
+}
+
+func authCheck(r *http.Request, db *sql.DB) bool {
+	cck, err := r.Cookie("userId")
+	if err != nil {
+		log.Println("Error1 Coockie check", err)
+		return false
+	}
+	check := new(string)
+	row := db.QueryRow("select login from userRegTable where authcoockie == $1", cck.Value)
+	if err1 := row.Scan(check); err1 != sql.ErrNoRows {
+		return true
+	} else {
+		return false
+	}
+}
+
+func CheckOrderTable(orderNumber string, db *sql.DB) string {
+	check := new(string)
+	row := db.QueryRow("select authcoockie from orderTable where ordernumber == $1", orderNumber)
+	if err1 := row.Scan(check); err1 != sql.ErrNoRows {
+		return *check
+	} else {
+		return ""
+	}
+}
+
+func AddRecordInOrderTable(db *sql.DB, r *http.Request, orderNumber string) int64 {
+	query := `INSERT INTO orderTable(ordernumber, authcoockie,) VALUES ($1, $2) ON CONFLICT (ordernumber) DO NOTHING`
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancelfunc()
+	stmt, err0 := db.PrepareContext(ctx, query)
+	if err0 != nil {
+		log.Println(err0)
+	}
+	defer func(stmt *sql.Stmt) {
+		err1 := stmt.Close()
+		if err1 != nil {
+			log.Println(err1)
+		}
+	}(stmt)
+
+	cck, err := r.Cookie("userId")
+	if err != nil {
+		log.Println("Error1 Coockie check", err)
+	}
+
+	res, err2 := stmt.ExecContext(ctx, orderNumber, cck.Value)
+	if err2 != nil {
+		log.Println(err2)
+	}
+	rows, err3 := res.RowsAffected()
+	if err3 != nil {
+		log.Println(err3)
+	}
+	log.Printf("%d rows created AddRecordInTable", rows)
+	return rows
 }

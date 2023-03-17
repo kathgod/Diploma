@@ -48,7 +48,7 @@ func PostLogin() func(w http.ResponseWriter, r *http.Request) {
 // PostOrders функция загрузки пользователем номера заказа для расчёта
 func PostOrders() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		resLF := 301
+		resLF := logicPostOrders(r)
 		switch {
 		case resLF == 200:
 			w.WriteHeader(http.StatusOK)

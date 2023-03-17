@@ -252,8 +252,6 @@ func logicPostOrders(r *http.Request) int {
 	}
 	orderNumber := string(rawBsp)
 
-	log.Println(orderNumber)
-
 	db = CreateOrderTable(db)
 
 	flagAuthUser := authCheck(r, db)
@@ -282,7 +280,7 @@ func logicPostOrders(r *http.Request) int {
 }
 
 func CreateOrderTable(db *sql.DB) *sql.DB {
-	query := `CREATE TABLE IF NOT EXISTS orderTable(ordernumber text, authcoockie text)`
+	query := `CREATE TABLE IF NOT EXISTS orderTable(ordernumber text primary key, authcoockie text)`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 	res, err := db.ExecContext(ctx, query)

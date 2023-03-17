@@ -9,7 +9,7 @@ import (
 func PostRegister() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		resLF, cck := logicPostRegister(r)
-		log.Println("func PostRegister, resLF:", resLF)
+		//log.Println("func PostRegister, resLF:", resLF)
 		switch {
 		case resLF == 200:
 			http.SetCookie(w, cck)
@@ -29,7 +29,7 @@ func PostRegister() func(w http.ResponseWriter, r *http.Request) {
 func PostLogin() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		resLF, cck := logicPostLogin(r)
-		log.Println("func PostLogin, resLF:", resLF)
+		//log.Println("func PostLogin, resLF:", resLF)
 		switch {
 		case resLF == 200:
 			http.SetCookie(w, cck)
@@ -48,6 +48,7 @@ func PostLogin() func(w http.ResponseWriter, r *http.Request) {
 // PostOrders функция загрузки пользователем номера заказа для расчёта
 func PostOrders() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Enter in PostOrders")
 		resLF := logicPostOrders(r)
 		switch {
 		case resLF == 200:

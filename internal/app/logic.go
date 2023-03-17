@@ -103,15 +103,14 @@ func CreateRegTable(db *sql.DB) *sql.DB {
 	if err != nil {
 		log.Println(err)
 	}
-	rows, err2 := res.RowsAffected()
+	_, err2 := res.RowsAffected()
 	if err2 != nil {
 		log.Println(err2)
 	}
-	log.Printf("%d rows created CreateRegTable", rows)
+	//log.Printf("%d rows created CreateRegTable", rows)
 	return db
 }
 
-// IfExist проверяет наличие логина\пароля в нашей базе
 func IfExist(db *sql.DB, segStrInst RegisterStruct) bool {
 	check := new(string)
 	row := db.QueryRow("select login from userRegTable where login == $1", segStrInst.Login)
@@ -148,7 +147,7 @@ func AddRecordInRegTable(db *sql.DB, segStrInst RegisterStruct) (int64, *http.Co
 	if err3 != nil {
 		log.Println(err3)
 	}
-	log.Printf("%d rows created AddRecordInTable", rows)
+	//log.Printf("%d rows created AddRecordInTable", rows)
 	return rows, cck
 }
 
@@ -233,6 +232,7 @@ func GetCckValue(db *sql.DB, segStrInst RegisterStruct) string {
 //---------------------------------------------------------------------------
 
 func logicPostOrders(r *http.Request) int {
+	log.Println("Enter in Logic function PostOrders")
 	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
 	defer func(db *sql.DB) {
 		err := db.Close()

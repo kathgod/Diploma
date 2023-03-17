@@ -321,7 +321,7 @@ func CheckOrderTable(orderNumber string, db *sql.DB) string {
 }
 
 func AddRecordInOrderTable(db *sql.DB, r *http.Request, orderNumber string) int64 {
-	query := `INSERT INTO orderTable(ordernumber, authcoockie,) VALUES ($1, $2) ON CONFLICT (ordernumber) DO NOTHING`
+	query := `INSERT INTO orderTable(ordernumber, authcoockie) VALUES ($1, $2) ON CONFLICT (ordernumber) DO NOTHING`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 	stmt, err0 := db.PrepareContext(ctx, query)

@@ -315,11 +315,11 @@ func authCheck(r *http.Request, db *sql.DB) bool {
 
 func CheckOrderTable(orderNumber string, db *sql.DB) string {
 	log.Println("enter in CheckOrderTable function")
-	check := new(string)
+	var check string
 	row := db.QueryRow("select authcoockie from orderTable where ordernumber == $1", orderNumber)
 	if err1 := row.Scan(check); err1 != sql.ErrNoRows {
-		log.Println(*check)
-		return *check
+		log.Println(check)
+		return check
 	} else {
 		return ""
 	}

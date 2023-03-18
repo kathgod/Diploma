@@ -252,6 +252,8 @@ func logicPostOrders(r *http.Request) int {
 	}
 	orderNumber := string(rawBsp)
 
+	log.Println(orderNumber)
+
 	db = CreateOrderTable(db)
 
 	flagAuthUser := authCheck(r, db)
@@ -262,8 +264,9 @@ func logicPostOrders(r *http.Request) int {
 		affrow = AddRecordInOrderTable(db, r, orderNumber)
 		if affrow == 0 {
 			userCoockieCheckOrderTable := CheckOrderTable(orderNumber, db)
-			cck, err := r.Cookie("userID")
-			if err != nil {
+			cck, err1 := r.Cookie("userID")
+			if err1 != nil {
+				log.Println(err1)
 				return 500
 			}
 			if userCoockieCheckOrderTable == cck.Value {

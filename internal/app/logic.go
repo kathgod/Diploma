@@ -113,7 +113,7 @@ func CreateRegTable(db *sql.DB) *sql.DB {
 
 func IfExist(db *sql.DB, segStrInst RegisterStruct) bool {
 	check := new(string)
-	row := db.QueryRow("select login from userRegTable where login == $1", segStrInst.Login)
+	row := db.QueryRow("select login from userRegTable where login = $1", segStrInst.Login)
 	if err := row.Scan(check); err != sql.ErrNoRows {
 		return true
 	} else {
@@ -220,7 +220,7 @@ func logicPostLogin(r *http.Request) (int, *http.Cookie) {
 
 func GetCckValue(db *sql.DB, segStrInst RegisterStruct) string {
 	check := new(string)
-	row := db.QueryRow("select authcoockie from userRegTable where login == $1", segStrInst.Login)
+	row := db.QueryRow("select authcoockie from userRegTable where login = $1", segStrInst.Login)
 	if err := row.Scan(check); err != sql.ErrNoRows {
 		return *check
 	} else {
@@ -305,7 +305,7 @@ func authCheck(r *http.Request, db *sql.DB) bool {
 		return false
 	}
 	check := new(string)
-	row := db.QueryRow("select login from userRegTable where authcoockie == $1", cck.Value)
+	row := db.QueryRow("select login from userRegTable where authcoockie = $1", cck.Value)
 	if err1 := row.Scan(check); err1 != sql.ErrNoRows {
 		return true
 	} else {
@@ -316,7 +316,7 @@ func authCheck(r *http.Request, db *sql.DB) bool {
 func CheckOrderTable(orderNumber string, db *sql.DB) string {
 	log.Println("enter in CheckOrderTable function")
 	var check string
-	row := db.QueryRow("select authcoockie from orderTable where ordernumber == $1", orderNumber)
+	row := db.QueryRow("select authcoockie from orderTable where ordernumber = $1", orderNumber)
 	if err1 := row.Scan(&check); err1 != sql.ErrNoRows {
 		log.Println(check)
 		return check

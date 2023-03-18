@@ -264,7 +264,7 @@ func logicPostOrders(r *http.Request) int {
 		affrow = AddRecordInOrderTable(db, r, orderNumber)
 		if affrow == 0 {
 			userCoockieCheckOrderTable := CheckOrderTable(orderNumber, db)
-			cck, err1 := r.Cookie("userID")
+			cck, err1 := r.Cookie("userId")
 			if err1 != nil {
 				log.Println(err1)
 				return 500

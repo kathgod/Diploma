@@ -317,7 +317,7 @@ func CheckOrderTable(orderNumber string, db *sql.DB) string {
 	log.Println("enter in CheckOrderTable function")
 	var check string
 	row := db.QueryRow("select authcoockie from orderTable where ordernumber == $1", orderNumber)
-	if err1 := row.Scan(check); err1 != sql.ErrNoRows {
+	if err1 := row.Scan(&check); err1 != sql.ErrNoRows {
 		log.Println(check)
 		return check
 	} else {

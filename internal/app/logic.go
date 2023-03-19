@@ -413,10 +413,10 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 }
 
 type RespGetOrderNumber struct {
-	Order      string `json:"order"`
-	Status     string `json:"status"`
-	Accrual    int    `json:"accrual,omitempty"`
-	UploadedAt string `json:"uploaded_at"`
+	Order      string  `json:"order"`
+	Status     string  `json:"status"`
+	Accrual    float64 `json:"accrual,omitempty"`
+	UploadedAt string  `json:"uploaded_at"`
 }
 
 func GetAllUsersOrderNumbers(db *sql.DB, r *http.Request) []RespGetOrderNumber {

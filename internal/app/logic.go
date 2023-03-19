@@ -256,7 +256,6 @@ func logicPostOrders(r *http.Request) int {
 		log.Println(errB)
 	}
 	flagFormatOrder := Valid(buff)
-	//log.Println(orderNumber)
 	if !flagFormatOrder {
 		return 422
 	}
@@ -418,18 +417,22 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 		for i := 0; i < len(orderNumbers); i++ {
 			resp := RespGetOrderNumber{}
 			accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
-			log.Println(accrualBaseAdressReqTxt)
 			acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
 			if err != nil {
 				log.Println(err)
 			}
-			log.Println(acrualResponse.StatusCode)
-			respB, err1 := io.ReadAll(acrualResponse.Body)
-			if err1 != nil {
-				log.Println(err1)
-			}
-			if err2 := json.Unmarshal(respB, &resp); err2 != nil {
-				log.Println(err2)
+			if acrualResponse.StatusCode == 200 {
+				respB, err1 := io.ReadAll(acrualResponse.Body)
+				if err1 != nil {
+					log.Println(err1)
+				}
+				if err2 := json.Unmarshal(respB, &resp); err2 != nil {
+					log.Println(err2)
+				}
+
+			} else if acrualResponse.StatusCode == 204 {
+				resp.Order = orderNumbers[i].Order
+				resp.Status = "NEW"
 			}
 			resp.UploadedAt = orderNumbers[i].UploadedAt
 			log.Println(resp.Accrual, resp.Order, resp.Status, resp.UploadedAt)

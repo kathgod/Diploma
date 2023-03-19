@@ -421,12 +421,18 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 			if err != nil {
 				log.Println(err)
 			}
-			respB, err1 := io.ReadAll(acrualResponse.Body)
-			if err1 != nil {
-				log.Println(err1)
-			}
-			if err2 := json.Unmarshal(respB, &resp); err2 != nil {
-				log.Println(err2)
+			if acrualResponse.StatusCode == 200 {
+
+				respB, err1 := io.ReadAll(acrualResponse.Body)
+				if err1 != nil {
+					log.Println(err1)
+				}
+				if err2 := json.Unmarshal(respB, &resp); err2 != nil {
+					log.Println(err2)
+				}
+			} else if acrualResponse.StatusCode == 204 {
+				resp.Status = "NEW"
+				resp.Number = orderNumbers[i].Order
 			}
 			resp.Order = ""
 			resp.UploadedAt = orderNumbers[i].UploadedAt

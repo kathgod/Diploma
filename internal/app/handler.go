@@ -72,10 +72,12 @@ func PostOrders() func(w http.ResponseWriter, r *http.Request) {
 // GetOrders получение списка загруженных пользователем номеров заказов, статусов их обработки и информации о начислениях
 func GetOrders() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		resLF := 300
+		resLF, byteResp := logicGetOrders(r)
 		switch {
 		case resLF == 200:
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
+			w.Write(byteResp)
 		case resLF == 204:
 			w.WriteHeader(http.StatusNoContent)
 		case resLF == 401:

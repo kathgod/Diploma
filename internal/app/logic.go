@@ -232,7 +232,6 @@ func GetCckValue(db *sql.DB, segStrInst RegisterStruct) string {
 //---------------------------------------------------------------------------
 
 func logicPostOrders(r *http.Request) int {
-	//log.Println("Enter in Logic function PostOrders")
 	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
 	defer func(db *sql.DB) {
 		err := db.Close()
@@ -283,7 +282,7 @@ func logicPostOrders(r *http.Request) int {
 }
 
 func CreateOrderTable(db *sql.DB) *sql.DB {
-	query := `CREATE TABLE IF NOT EXISTS orderTable(ordernumber text primary key, authcoockie text)`
+	query := `CREATE TABLE IF NOT EXISTS orderTable(ordernumber text primary key, authcoockie text, timecreate text, dateandtime datetimeoffset)`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 	res, err := db.ExecContext(ctx, query)
@@ -314,7 +313,6 @@ func authCheck(r *http.Request, db *sql.DB) bool {
 }
 
 func CheckOrderTable(orderNumber string, db *sql.DB) string {
-	log.Println("enter in CheckOrderTable function")
 	var check string
 	row := db.QueryRow("select authcoockie from orderTable where ordernumber = $1", orderNumber)
 	if err1 := row.Scan(&check); err1 != sql.ErrNoRows {
@@ -326,7 +324,7 @@ func CheckOrderTable(orderNumber string, db *sql.DB) string {
 }
 
 func AddRecordInOrderTable(db *sql.DB, r *http.Request, orderNumber string) int64 {
-	query := `INSERT INTO orderTable(ordernumber, authcoockie) VALUES ($1, $2) ON CONFLICT (ordernumber) DO NOTHING`
+	query := `INSERT INTO orderTable(ordernumber, authcoockie, timecreate) VALUES ($1, $2, $3, now()) ON CONFLICT (ordernumber) DO NOTHING`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 	stmt, err0 := db.PrepareContext(ctx, query)
@@ -345,7 +343,10 @@ func AddRecordInOrderTable(db *sql.DB, r *http.Request, orderNumber string) int6
 		log.Println("Error1 Coockie check", err)
 	}
 
-	res, err2 := stmt.ExecContext(ctx, orderNumber, cck.Value)
+	now := time.Now()
+	timeStr := now.Format("2006-01-02T15:04:05Z07:00")
+
+	res, err2 := stmt.ExecContext(ctx, orderNumber, cck.Value, timeStr)
 	if err2 != nil {
 		log.Println(err2)
 	}
@@ -355,4 +356,87 @@ func AddRecordInOrderTable(db *sql.DB, r *http.Request, orderNumber string) int6
 	}
 	log.Printf("%d rows created AddRecordInTable", rows)
 	return rows
+}
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+
+func logicGetOrders(r *http.Request) (int, []byte) {
+	var emptyByte []byte
+	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(db)
+	if errDB != nil {
+		log.Println(dbOpenError)
+		return 500, emptyByte
+	}
+
+	flagAuthUser := authCheck(r, db)
+	if !flagAuthUser {
+		return 401, emptyByte
+	}
+
+	orderNumbers := GetAllUsersOrderNumbers(db, r)
+	if len(orderNumbers) == 0 {
+		return 204, emptyByte
+	} else {
+		var resOrderNumbers []RespGetOrderNumber
+		for i := 0; i < len(orderNumbers); i++ {
+			resp := RespGetOrderNumber{}
+			accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
+			acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
+			if err != nil {
+				log.Println(err)
+			}
+			respB, err1 := io.ReadAll(acrualResponse.Body)
+			if err1 != nil {
+				log.Println(err1)
+			}
+			if err2 := json.Unmarshal(respB, &resp); err2 != nil {
+				log.Println(err2)
+			}
+			resp.UploadedAt = orderNumbers[i].UploadedAt
+			resOrderNumbers = append(resOrderNumbers, resp)
+		}
+		byteFormatResp, errM := json.Marshal(resOrderNumbers)
+		if errM != nil {
+			log.Println(errM)
+		}
+		return 200, byteFormatResp
+	}
+
+}
+
+type RespGetOrderNumber struct {
+	Order      string `json:"order"`
+	Status     string `json:"status"`
+	Accrual    string `json:"accrual,omitempty"`
+	UploadedAt string `json:"uploaded_at"`
+}
+
+func GetAllUsersOrderNumbers(db *sql.DB, r *http.Request) []RespGetOrderNumber {
+	cck, err := r.Cookie("userId")
+	if err != nil {
+		log.Println(err)
+	}
+
+	var orderNumbers []RespGetOrderNumber
+	rows, err1 := db.Query("select ordernumber, timecreate from orderTable where authcoockie = $1 order by dateandtime asc", cck.Value)
+	if err1 != nil {
+		log.Println(err1)
+	}
+	for rows.Next() {
+		var oneNumber RespGetOrderNumber
+		errRow := rows.Scan(oneNumber.Order, oneNumber.UploadedAt)
+		if errRow != nil {
+			log.Println(errRow)
+			continue
+		}
+		orderNumbers = append(orderNumbers, oneNumber)
+	}
+	return orderNumbers
 }

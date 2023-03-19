@@ -584,7 +584,7 @@ func insertInToBalanceTable(db *sql.DB, r *http.Request, resp RespGetOrderNumber
 		}
 	}(stmt)
 
-	res, err2 := stmt.ExecContext(ctx, cck.Value, resp.Accrual)
+	res, err2 := stmt.ExecContext(ctx, cck.Value, resp.Accrual, resp.Order)
 	if err2 != nil {
 		log.Println(err2)
 	}

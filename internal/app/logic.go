@@ -425,7 +425,7 @@ func GetAllUsersOrderNumbers(db *sql.DB, r *http.Request) []RespGetOrderNumber {
 	}
 
 	var orderNumbers []RespGetOrderNumber
-	rows, err1 := db.Query("select ordernumber, timecreate from orderTable where authcoockie = $1 order by dateandtime asc", cck.Value)
+	rows, err1 := db.Query("select ordernumber, timecreate from orderTable where authcoockie = $1 order by mydateandtime asc", cck.Value)
 	if err1 != nil {
 		log.Println(err1)
 	}

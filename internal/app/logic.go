@@ -282,7 +282,7 @@ func logicPostOrders(r *http.Request) int {
 }
 
 func CreateOrderTable(db *sql.DB) *sql.DB {
-	query := `CREATE TABLE IF NOT EXISTS orderTable(ordernumber text primary key, authcoockie text, timecreate text, dateandtime datetimeoffset)`
+	query := `CREATE TABLE IF NOT EXISTS orderTable(ordernumber text primary key, authcoockie text, timecreate text, mydateandtime datetime)`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 	res, err := db.ExecContext(ctx, query)
@@ -324,7 +324,7 @@ func CheckOrderTable(orderNumber string, db *sql.DB) string {
 }
 
 func AddRecordInOrderTable(db *sql.DB, r *http.Request, orderNumber string) int64 {
-	query := `INSERT INTO orderTable(ordernumber, authcoockie, timecreate) VALUES ($1, $2, $3, now()) ON CONFLICT (ordernumber) DO NOTHING`
+	query := `INSERT INTO orderTable(ordernumber, authcoockie, timecreate, mydateandtime) VALUES ($1, $2, $3, now()) ON CONFLICT (ordernumber) DO NOTHING`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 	stmt, err0 := db.PrepareContext(ctx, query)

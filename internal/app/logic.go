@@ -421,19 +421,14 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 			if err != nil {
 				log.Println(err)
 			}
-			if acrualResponse.StatusCode == 200 {
-				respB, err1 := io.ReadAll(acrualResponse.Body)
-				if err1 != nil {
-					log.Println(err1)
-				}
-				if err2 := json.Unmarshal(respB, &resp); err2 != nil {
-					log.Println(err2)
-				}
-
-			} else if acrualResponse.StatusCode == 204 {
-				resp.Order = orderNumbers[i].Order
-				resp.Status = "NEW"
+			respB, err1 := io.ReadAll(acrualResponse.Body)
+			if err1 != nil {
+				log.Println(err1)
 			}
+			if err2 := json.Unmarshal(respB, &resp); err2 != nil {
+				log.Println(err2)
+			}
+			resp.Order = ""
 			resp.UploadedAt = orderNumbers[i].UploadedAt
 			resOrderNumbers = append(resOrderNumbers, resp)
 
@@ -449,7 +444,8 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 }
 
 type RespGetOrderNumber struct {
-	Order      string  `json:"order"`
+	Number     string  `json:"number"`
+	Order      string  `json:"order,omitempty"`
 	Status     string  `json:"status"`
 	Accrual    float64 `json:"accrual,omitempty"`
 	UploadedAt string  `json:"uploaded_at"`

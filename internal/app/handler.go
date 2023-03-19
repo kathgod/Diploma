@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
 )
 
@@ -76,11 +74,6 @@ func GetOrders() func(w http.ResponseWriter, r *http.Request) {
 		resLF, byteResp := logicGetOrders(r)
 		switch {
 		case resLF == 200:
-			var resOrderNumbers1 []RespGetOrderNumber
-			if err3 := json.Unmarshal(byteResp, &resOrderNumbers1); err3 != nil {
-				log.Println(err3)
-			}
-			log.Println(resOrderNumbers1[0].Accrual, resOrderNumbers1[0].Order, resOrderNumbers1[0].Status, resOrderNumbers1[0].UploadedAt)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			w.Write(byteResp)

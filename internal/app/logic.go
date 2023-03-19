@@ -251,7 +251,7 @@ func logicPostOrders(r *http.Request) int {
 	}
 	orderNumber := string(rawBsp)
 
-	log.Println(orderNumber)
+	//log.Println(orderNumber)
 
 	db = CreateOrderTable(db)
 
@@ -293,7 +293,7 @@ func CreateOrderTable(db *sql.DB) *sql.DB {
 	if err2 != nil {
 		log.Println(err2)
 	}
-	log.Printf("%d rows created CreateRegTable", rows)
+	//log.Printf("%d rows created CreateRegTable", rows)
 	return db
 }
 
@@ -354,7 +354,7 @@ func AddRecordInOrderTable(db *sql.DB, r *http.Request, orderNumber string) int6
 	if err3 != nil {
 		log.Println(err3)
 	}
-	log.Printf("%d rows created AddRecordInTable", rows)
+	//log.Printf("%d rows created AddRecordInTable", rows)
 	return rows
 }
 
@@ -381,6 +381,7 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 	}
 
 	orderNumbers := GetAllUsersOrderNumbers(db, r)
+	log.Println(len(orderNumbers))
 	if len(orderNumbers) == 0 {
 		return 204, emptyByte
 	} else {
@@ -436,6 +437,7 @@ func GetAllUsersOrderNumbers(db *sql.DB, r *http.Request) []RespGetOrderNumber {
 			log.Println(errRow)
 			continue
 		}
+		log.Println(oneNumber.Order, oneNumber.UploadedAt)
 		orderNumbers = append(orderNumbers, oneNumber)
 	}
 	return orderNumbers

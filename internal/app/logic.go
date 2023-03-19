@@ -411,7 +411,6 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 	}
 
 	orderNumbers := GetAllUsersOrderNumbers(db, r)
-	log.Println(len(orderNumbers))
 	if len(orderNumbers) == 0 {
 		return 204, emptyByte
 	} else {
@@ -431,6 +430,7 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 				log.Println(err2)
 			}
 			resp.UploadedAt = orderNumbers[i].UploadedAt
+			log.Println(resp.Accrual, resp.Order, resp.Status, resp.UploadedAt)
 			resOrderNumbers = append(resOrderNumbers, resp)
 		}
 		byteFormatResp, errM := json.Marshal(resOrderNumbers)
@@ -467,7 +467,7 @@ func GetAllUsersOrderNumbers(db *sql.DB, r *http.Request) []RespGetOrderNumber {
 			log.Println(errRow)
 			continue
 		}
-		log.Println(oneNumber.Order, oneNumber.UploadedAt)
+
 		orderNumbers = append(orderNumbers, oneNumber)
 	}
 	return orderNumbers

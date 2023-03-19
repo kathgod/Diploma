@@ -90,10 +90,12 @@ func GetOrders() func(w http.ResponseWriter, r *http.Request) {
 // GetBalance функция  получения текущего баланса счёта баллов лояльности пользователя
 func GetBalance() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		resLF := 300
+		resLF, byteResp := logicGetBalance(r)
 		switch {
 		case resLF == 200:
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
+			w.Write(byteResp)
 		case resLF == 401:
 			w.WriteHeader(http.StatusUnauthorized)
 		case resLF == 500:

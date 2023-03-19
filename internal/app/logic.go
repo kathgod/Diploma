@@ -283,10 +283,9 @@ func logicPostOrders(r *http.Request) int {
 		} else {
 			return 202
 		}
-
 	}
-
 }
+
 func Valid(number int) bool {
 	return (number%10+checksum(number/10))%10 == 0
 }
@@ -450,9 +449,9 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 }
 
 type RespGetOrderNumber struct {
-	Number     string  `json:"number"`
+	Number     string  `json:"number,omitempty"`
 	Order      string  `json:"order,omitempty"`
-	Status     string  `json:"status"`
+	Status     string  `json:"status,omitempty"`
 	Accrual    float64 `json:"accrual,omitempty"`
 	UploadedAt string  `json:"uploaded_at"`
 }
@@ -479,4 +478,145 @@ func GetAllUsersOrderNumbers(db *sql.DB, r *http.Request) []RespGetOrderNumber {
 		orderNumbers = append(orderNumbers, oneNumber)
 	}
 	return orderNumbers
+}
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+
+func logicGetBalance(r *http.Request) (int, []byte) {
+	var emtyByte []byte
+	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(db)
+	if errDB != nil {
+		log.Println(dbOpenError)
+		return 500, emtyByte
+	}
+
+	db = createBalanceTable(db)
+
+	flagAuthUser := authCheck(r, db)
+	if !flagAuthUser {
+		return 401, emtyByte
+	}
+
+	orderNumbers := GetAllUsersOrderNumbers(db, r)
+	var balanceStruct Balance
+	for i := 0; i < len(orderNumbers); i++ {
+		resp := RespGetOrderNumber{}
+		accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
+		acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
+		if err != nil {
+			log.Println(err)
+		}
+		if acrualResponse.StatusCode == 204 {
+			for acrualResponse.StatusCode != 200 {
+				acrualResponse, err = http.Get(accrualBaseAdressReqTxt)
+				if err != nil {
+					log.Println(err)
+				}
+				if acrualResponse.StatusCode == 429 {
+					time.Sleep(60 * time.Second)
+				}
+			}
+		}
+		if acrualResponse.StatusCode == 200 {
+			respB, err1 := io.ReadAll(acrualResponse.Body)
+			if err1 != nil {
+				log.Println(err1)
+			}
+			if err2 := json.Unmarshal(respB, &resp); err2 != nil {
+				log.Println(err2)
+			}
+		}
+		//resp.Order = ""
+		resp.UploadedAt = orderNumbers[i].UploadedAt
+		insertInToBalanceTable(db, r, resp)
+		balanceStruct.Current = balanceStruct.Current + resp.Accrual
+		//resOrderNumbers = append(resOrderNumbers, resp)
+	}
+	withdraw := getAllWithdraw(db, r)
+	balanceStruct.Withdrawn = withdraw
+	byteFormatResp, errM := json.Marshal(balanceStruct)
+	if errM != nil {
+		log.Println(errM)
+	}
+	return 200, byteFormatResp
+
+}
+
+func createBalanceTable(db *sql.DB) *sql.DB {
+	query := `CREATE TABLE IF NOT EXISTS balancetable(coockie text, accrual float, withdrawn float, ordernumber text primary key)`
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancelfunc()
+	res, err := db.ExecContext(ctx, query)
+	if err != nil {
+		log.Println(err)
+	}
+	_, err2 := res.RowsAffected()
+	if err2 != nil {
+		log.Println(err2)
+	}
+	//log.Printf("%d rows created CreateRegTable", rows)
+	return db
+}
+
+func insertInToBalanceTable(db *sql.DB, r *http.Request, resp RespGetOrderNumber) {
+	query := `INSERT INTO balancetable(coockie, accrual, ordernumber) VALUES ($1, $2, $3) ON CONFLICT (ordernumber) DO NOTHING`
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancelfunc()
+	cck, errCck := r.Cookie("userId")
+	if errCck != nil {
+		log.Println(errCck)
+	}
+	stmt, err0 := db.PrepareContext(ctx, query)
+	if err0 != nil {
+		log.Println(err0)
+	}
+	defer func(stmt *sql.Stmt) {
+		err1 := stmt.Close()
+		if err1 != nil {
+			log.Println(err1)
+		}
+	}(stmt)
+
+	res, err2 := stmt.ExecContext(ctx, cck.Value, resp.Accrual)
+	if err2 != nil {
+		log.Println(err2)
+	}
+	_, err3 := res.RowsAffected()
+	if err3 != nil {
+		log.Println(err3)
+	}
+}
+
+type Balance struct {
+	Current   float64 `json:"current"`
+	Withdrawn float64 `json:"withdrawn,omitempty"`
+}
+
+func getAllWithdraw(db *sql.DB, r *http.Request) float64 {
+	cck, errCck := r.Cookie("userId")
+	if errCck != nil {
+		log.Println(errCck)
+	}
+	rows, err1 := db.Query("select withdrawn from balancetable where coockie=$1", cck.Value)
+	if err1 != nil {
+		log.Println(err1)
+	}
+	var withdraw float64
+	for rows.Next() {
+		var buff float64
+		errRow := rows.Scan(&buff)
+		if errRow != nil {
+			log.Println(errRow)
+			continue
+		}
+		withdraw = withdraw + buff
+	}
+	return withdraw
 }

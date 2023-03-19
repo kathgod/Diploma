@@ -435,14 +435,18 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 				resp.Status = "NEW"
 			}
 			resp.UploadedAt = orderNumbers[i].UploadedAt
-			log.Println(resp.Accrual, resp.Order, resp.Status, resp.UploadedAt)
 			resOrderNumbers = append(resOrderNumbers, resp)
-			log.Println(resOrderNumbers[0].Accrual, resOrderNumbers[0].Order, resOrderNumbers[0].Status, resOrderNumbers[0].UploadedAt)
+
 		}
 		byteFormatResp, errM := json.Marshal(resOrderNumbers)
 		if errM != nil {
 			log.Println(errM)
 		}
+		var resOrderNumbers1 []RespGetOrderNumber
+		if err3 := json.Unmarshal(byteFormatResp, &resOrderNumbers1); err3 != nil {
+			log.Println(err3)
+		}
+		log.Println(resOrderNumbers1[0].Accrual, resOrderNumbers1[0].Order, resOrderNumbers1[0].Status, resOrderNumbers1[0].UploadedAt)
 		return 200, byteFormatResp
 	}
 

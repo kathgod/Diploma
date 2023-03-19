@@ -418,10 +418,12 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 		for i := 0; i < len(orderNumbers); i++ {
 			resp := RespGetOrderNumber{}
 			accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
+			log.Println(accrualBaseAdressReqTxt)
 			acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
 			if err != nil {
 				log.Println(err)
 			}
+			log.Println(acrualResponse.StatusCode)
 			respB, err1 := io.ReadAll(acrualResponse.Body)
 			if err1 != nil {
 				log.Println(err1)

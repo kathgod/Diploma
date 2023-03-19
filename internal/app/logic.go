@@ -431,7 +431,7 @@ func GetAllUsersOrderNumbers(db *sql.DB, r *http.Request) []RespGetOrderNumber {
 	}
 	for rows.Next() {
 		var oneNumber RespGetOrderNumber
-		errRow := rows.Scan(oneNumber.Order, oneNumber.UploadedAt)
+		errRow := rows.Scan(&oneNumber.Order, &oneNumber.UploadedAt)
 		if errRow != nil {
 			log.Println(errRow)
 			continue

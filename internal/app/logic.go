@@ -289,7 +289,7 @@ func CreateOrderTable(db *sql.DB) *sql.DB {
 	if err != nil {
 		log.Println(err)
 	}
-	rows, err2 := res.RowsAffected()
+	_, err2 := res.RowsAffected()
 	if err2 != nil {
 		log.Println(err2)
 	}

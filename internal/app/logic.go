@@ -415,7 +415,7 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 type RespGetOrderNumber struct {
 	Order      string `json:"order"`
 	Status     string `json:"status"`
-	Accrual    string `json:"accrual,omitempty"`
+	Accrual    int    `json:"accrual,omitempty"`
 	UploadedAt string `json:"uploaded_at"`
 }
 

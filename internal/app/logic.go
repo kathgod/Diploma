@@ -429,6 +429,7 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 				if err2 := json.Unmarshal(respB, &resp); err2 != nil {
 					log.Println(err2)
 				}
+				resp.Number = orderNumbers[i].Order
 			} else if acrualResponse.StatusCode == 204 {
 				resp.Status = "NEW"
 				resp.Number = orderNumbers[i].Order

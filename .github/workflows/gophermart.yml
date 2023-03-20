@@ -46,9 +46,11 @@ jobs:
 
       - name: Prepare binaries
         run: |
+          go get diploma/cmd/gophermart
           (cd cmd/gophermart && go build -buildvcs=false -o gophermart)
           (cd cmd/accrual && chmod +x accrual_linux_amd64)
           go get diploma/cmd/gophermart
+
 
       - name: Test
         run: |

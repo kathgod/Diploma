@@ -430,8 +430,15 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 					log.Println(err2)
 				}
 			} else if acrualResponse.StatusCode == 204 {
-				resp.Status = "NEW"
-				resp.Number = orderNumbers[i].Order
+				for acrualResponse.StatusCode != 200 {
+					acrualResponse, err = http.Get(accrualBaseAdressReqTxt)
+					if err != nil {
+						log.Println(err)
+					}
+					if acrualResponse.StatusCode == 429 {
+						time.Sleep(60 * time.Second)
+					}
+				}
 			}
 			resp.Order = ""
 			resp.UploadedAt = orderNumbers[i].UploadedAt

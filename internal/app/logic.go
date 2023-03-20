@@ -500,13 +500,11 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 	db = createBalanceTable(db)
 
 	flagAuthUser := authCheck(r, db)
-	log.Println(flagAuthUser)
 	if !flagAuthUser {
 		return 401, emtyByte
 	}
 
 	orderNumbers := GetAllUsersOrderNumbers(db, r)
-	log.Println(len(orderNumbers))
 	var balanceStruct Balance
 	for i := 0; i < len(orderNumbers); i++ {
 		resp := RespGetOrderNumber{}
@@ -515,7 +513,6 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 		if err != nil {
 			log.Println(err)
 		}
-		log.Println(acrualResponse.StatusCode)
 		if acrualResponse.StatusCode == 204 {
 			for acrualResponse.StatusCode != 200 {
 				acrualResponse, err = http.Get(accrualBaseAdressReqTxt)
@@ -527,7 +524,6 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 				}
 			}
 		}
-		log.Println(acrualResponse.StatusCode)
 		if acrualResponse.StatusCode == 200 {
 			respB, err1 := io.ReadAll(acrualResponse.Body)
 			if err1 != nil {
@@ -545,6 +541,7 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 	}
 	withdraw := getAllWithdraw(db, r)
 	balanceStruct.Withdrawn = withdraw
+	log.Println(balanceStruct.Current, balanceStruct.Withdrawn)
 	byteFormatResp, errM := json.Marshal(balanceStruct)
 	if errM != nil {
 		log.Println(errM)
@@ -587,7 +584,6 @@ func insertInToBalanceTable(db *sql.DB, r *http.Request, resp RespGetOrderNumber
 			log.Println(err1)
 		}
 	}(stmt)
-	log.Println(cck.Value, resp.Accrual, resp.Order)
 	res, err2 := stmt.ExecContext(ctx, cck.Value, resp.Accrual, resp.Order)
 	if err2 != nil {
 		log.Println(err2)
@@ -618,6 +614,7 @@ func getAllWithdraw(db *sql.DB, r *http.Request) float64 {
 		errRow := rows.Scan(&buff)
 		if errRow != nil {
 			log.Println(errRow)
+
 			continue
 		}
 		withdraw = withdraw + buff

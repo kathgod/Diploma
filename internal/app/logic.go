@@ -712,24 +712,40 @@ func inserWithdrawtInToBalanceTable(db *sql.DB, balanceWithdrawInst BalanceWithd
 }
 
 func getBalance(db *sql.DB, r *http.Request) float64 {
-	cck, err := r.Cookie("userId")
-	if err != nil {
-		log.Println(err)
+
+	orderNumbers := GetAllUsersOrderNumbers(db, r)
+	var balanceStruct Balance
+	for i := 0; i < len(orderNumbers); i++ {
+		resp := RespGetOrderNumber{}
+		accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
+		acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
+		if err != nil {
+			log.Println(err)
+		}
+		if acrualResponse.StatusCode == 204 {
+			for acrualResponse.StatusCode != 200 {
+				acrualResponse, err = http.Get(accrualBaseAdressReqTxt)
+				if err != nil {
+					log.Println(err)
+				}
+				if acrualResponse.StatusCode == 429 {
+					time.Sleep(60 * time.Second)
+				}
+			}
+		}
+		if acrualResponse.StatusCode == 200 {
+			respB, err1 := io.ReadAll(acrualResponse.Body)
+			if err1 != nil {
+				log.Println(err1)
+			}
+			if err2 := json.Unmarshal(respB, &resp); err2 != nil {
+				log.Println(err2)
+			}
+		}
+
+		balanceStruct.Current = balanceStruct.Current + resp.Accrual
+		//resOrderNumbers = append(resOrderNumbers, resp)
 	}
 
-	rows, err1 := db.Query("select accrual from balancetable where coockie = $1", cck.Value)
-	if err1 != nil {
-		log.Println(err1)
-	}
-	var balance float64
-	for rows.Next() {
-		var acrl float64
-		errRow := rows.Scan(acrl)
-		if errRow != nil {
-			log.Println(errRow)
-			continue
-		}
-		balance = balance + acrl
-	}
-	return balance
+	return balanceStruct.Current
 }

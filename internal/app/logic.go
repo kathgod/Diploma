@@ -550,7 +550,7 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 }
 
 func createBalanceTable(db *sql.DB) *sql.DB {
-	query := `CREATE TABLE IF NOT EXISTS balancetable(coockie text, accrual float(2), withdrawn float(2) default 0, ordernumber text primary key, gotimewithdrawn text, sqltimewithdrawn timestamptz)`
+	query := `CREATE TABLE IF NOT EXISTS balancetable(coockie text, accrual float(2) default 0, withdrawn float(2) default 0, ordernumber text primary key, gotimewithdrawn text, sqltimewithdrawn timestamptz)`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 	res, err := db.ExecContext(ctx, query)

@@ -523,15 +523,8 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 			log.Println(err)
 		}
 		if acrualResponse.StatusCode == 204 {
-			for acrualResponse.StatusCode != 200 {
-				acrualResponse, err = http.Get(accrualBaseAdressReqTxt)
-				if err != nil {
-					log.Println(err)
-				}
-				if acrualResponse.StatusCode == 429 {
-					time.Sleep(60 * time.Second)
-				}
-			}
+			resp.Status = "NEW"
+			resp.Number = orderNumbers[i].Order
 		}
 		if acrualResponse.StatusCode == 200 {
 			respB, err1 := io.ReadAll(acrualResponse.Body)
@@ -740,18 +733,12 @@ func getBalance(db *sql.DB, r *http.Request) float64 {
 		if err != nil {
 			log.Println(err)
 		}
+
 		if acrualResponse.StatusCode == 204 {
-			for acrualResponse.StatusCode != 200 {
-				acrualResponse, err = http.Get(accrualBaseAdressReqTxt)
-				defer acrualResponse.Body.Close()
-				if err != nil {
-					log.Println(err)
-				}
-				if acrualResponse.StatusCode == 429 {
-					time.Sleep(60 * time.Second)
-				}
-			}
+			resp.Status = "NEW"
+			resp.Number = orderNumbers[i].Order
 		}
+
 		if acrualResponse.StatusCode == 200 {
 			respB, err1 := io.ReadAll(acrualResponse.Body)
 			if err1 != nil {

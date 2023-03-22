@@ -550,7 +550,7 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 }
 
 func createBalanceTable(db *sql.DB) *sql.DB {
-	query := `CREATE TABLE IF NOT EXISTS balancetable(coockie text, accrual float(2), withdrawn float(2), ordernumber text primary key, gotimewithdrawn text, sqltimewithdrawn timestamptz)`
+	query := `CREATE TABLE IF NOT EXISTS balancetable(coockie text, accrual float(2), withdrawn float(2) default 0, ordernumber text primary key, gotimewithdrawn text, sqltimewithdrawn timestamptz)`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 	res, err := db.ExecContext(ctx, query)
@@ -717,7 +717,7 @@ func getBalance(db *sql.DB, r *http.Request) float64 {
 		log.Println(err)
 	}
 
-	rows, err1 := db.Query("select accrual from balancetable where authcoockie = $1", cck.Value)
+	rows, err1 := db.Query("select accrual from balancetable where coockie = $1", cck.Value)
 	if err1 != nil {
 		log.Println(err1)
 	}

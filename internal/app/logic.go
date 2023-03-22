@@ -566,7 +566,7 @@ func createBalanceTable(db *sql.DB) *sql.DB {
 }
 
 func insertInToBalanceTable(db *sql.DB, r *http.Request, resp RespGetOrderNumber) {
-	query := `INSERT INTO balancetable(coockie, accrual, ordernumber) VALUES ($1, $2, $3)`
+	query := `INSERT INTO balancetable(coockie, accrual, ordernumber) VALUES ($1, $2, $3) ON CONFLICT (ordernumber) DO NOTHING`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 	cck, errCck := r.Cookie("userId")
@@ -678,7 +678,7 @@ type BalanceWithdraw struct {
 }
 
 func inserWithdrawtInToBalanceTable(db *sql.DB, balanceWithdrawInst BalanceWithdraw, r *http.Request) {
-	query := `INSERT INTO balancetable(coockie, ordernumber, withdrawn, gotimewithdrawn, sqltimewithdrawn) VALUES ($1, $2, $3, $4, now())`
+	query := `INSERT INTO balancetable(coockie, ordernumber, withdrawn, gotimewithdrawn, sqltimewithdrawn) VALUES ($1, $2, $3, $4, now()) ON CONFLICT (ordernumber) DO NOTHING`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 

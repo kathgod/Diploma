@@ -541,6 +541,7 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 	}
 	withdraw := getAllWithdraw(db, r)
 	balanceStruct.Withdrawn = withdraw
+	balanceStruct.Current = balanceStruct.Current - withdraw
 	byteFormatResp, errM := json.Marshal(balanceStruct)
 	if errM != nil {
 		log.Println(errM)

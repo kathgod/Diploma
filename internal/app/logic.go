@@ -417,9 +417,16 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 			resp := RespGetOrderNumber{}
 			accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
 			acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
+			defer func(Body io.ReadCloser) {
+				err := Body.Close()
+				if err != nil {
+
+				}
+			}(acrualResponse.Body)
 			if err != nil {
 				log.Println(err)
 			}
+
 			if acrualResponse.StatusCode == 200 {
 				respB, err1 := io.ReadAll(acrualResponse.Body)
 				if err1 != nil {
@@ -510,12 +517,24 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 		resp := RespGetOrderNumber{}
 		accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
 		acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+
+			}
+		}(acrualResponse.Body)
 		if err != nil {
 			log.Println(err)
 		}
 		if acrualResponse.StatusCode == 204 {
 			for acrualResponse.StatusCode != 200 {
 				acrualResponse, err = http.Get(accrualBaseAdressReqTxt)
+				defer func(Body io.ReadCloser) {
+					err := Body.Close()
+					if err != nil {
+
+					}
+				}(acrualResponse.Body)
 				if err != nil {
 					log.Println(err)
 				}
@@ -720,12 +739,24 @@ func getBalance(db *sql.DB, r *http.Request) float64 {
 		resp := RespGetOrderNumber{}
 		accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
 		acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+
+			}
+		}(acrualResponse.Body)
 		if err != nil {
 			log.Println(err)
 		}
 		if acrualResponse.StatusCode == 204 {
 			for acrualResponse.StatusCode != 200 {
 				acrualResponse, err = http.Get(accrualBaseAdressReqTxt)
+				defer func(Body io.ReadCloser) {
+					err := Body.Close()
+					if err != nil {
+
+					}
+				}(acrualResponse.Body)
 				if err != nil {
 					log.Println(err)
 				}

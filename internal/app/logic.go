@@ -808,7 +808,7 @@ func selectAllUserWithdraw(db *sql.DB, r *http.Request) []UserWithdrawStruct {
 }
 
 type UserWithdrawStruct struct {
-	Order       string `json:"order"`
-	Sum         string `json:"sum"`
-	ProcessedAt string `json:"processed_at"`
+	Order       string  `json:"order"`
+	Sum         float32 `json:"sum"`
+	ProcessedAt string  `json:"processed_at"`
 }

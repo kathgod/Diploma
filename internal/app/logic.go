@@ -417,12 +417,7 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 			resp := RespGetOrderNumber{}
 			accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
 			acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
-			defer func(Body io.ReadCloser) {
-				errBC := Body.Close()
-				if errBC != nil {
-					log.Println(errBC)
-				}
-			}(acrualResponse.Body)
+			defer acrualResponse.Body.Close()
 			if err != nil {
 				log.Println(err)
 			}
@@ -470,16 +465,12 @@ func GetAllUsersOrderNumbers(db *sql.DB, r *http.Request) []RespGetOrderNumber {
 	}
 
 	var orderNumbers []RespGetOrderNumber
-	rows, err1 := db.Query("select ordernumber, timecreate from orderTable where authcoockie = $1 order by mydateandtime asc", cck.Value)
+	q := `select ordernumber, timecreate from orderTable where authcoockie = $1 order by mydateandtime asc`
+	rows, err1 := db.Query(q, cck.Value)
 	if err1 != nil {
 		log.Println(err1)
 	}
-	defer func(rows *sql.Rows) {
-		errRC := rows.Close()
-		if errRC != nil {
-			log.Println(errRC)
-		}
-	}(rows)
+	defer rows.Close()
 	for rows.Next() {
 		var oneNumber RespGetOrderNumber
 		errRow := rows.Scan(&oneNumber.Order, &oneNumber.UploadedAt)
@@ -523,24 +514,14 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 		resp := RespGetOrderNumber{}
 		accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
 		acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
-		defer func(Body io.ReadCloser) {
-			errBC := Body.Close()
-			if errBC != nil {
-				log.Println(errBC)
-			}
-		}(acrualResponse.Body)
+		defer acrualResponse.Body.Close()
 		if err != nil {
 			log.Println(err)
 		}
 		if acrualResponse.StatusCode == 204 {
 			for acrualResponse.StatusCode != 200 {
 				acrualResponse, err = http.Get(accrualBaseAdressReqTxt)
-				defer func(Body io.ReadCloser) {
-					errBC := Body.Close()
-					if errBC != nil {
-						log.Println(errBC)
-					}
-				}(acrualResponse.Body)
+				defer acrualResponse.Body.Close()
 				if err != nil {
 					log.Println(err)
 				}
@@ -629,16 +610,12 @@ func getAllWithdraw(db *sql.DB, r *http.Request) float64 {
 	if errCck != nil {
 		log.Println(errCck)
 	}
-	rows, err1 := db.Query("select withdrawn from balancetable where coockie=$1", cck.Value)
+	q := `select withdrawn from balancetable where coockie=$1`
+	rows, err1 := db.Query(q, cck.Value)
 	if err1 != nil {
 		log.Println(err1)
 	}
-	defer func(rows *sql.Rows) {
-		errRC := rows.Close()
-		if errRC != nil {
-			log.Println(errRC)
-		}
-	}(rows)
+	defer rows.Close()
 	var withdraw float64
 	for rows.Next() {
 		var buff float64
@@ -751,24 +728,14 @@ func getBalance(db *sql.DB, r *http.Request) float64 {
 		resp := RespGetOrderNumber{}
 		accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
 		acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
-		defer func(Body io.ReadCloser) {
-			errBC := Body.Close()
-			if errBC != nil {
-				log.Println(errBC)
-			}
-		}(acrualResponse.Body)
+		defer acrualResponse.Body.Close()
 		if err != nil {
 			log.Println(err)
 		}
 		if acrualResponse.StatusCode == 204 {
 			for acrualResponse.StatusCode != 200 {
 				acrualResponse, err = http.Get(accrualBaseAdressReqTxt)
-				defer func(Body io.ReadCloser) {
-					errBC := Body.Close()
-					if errBC != nil {
-						log.Println(errBC)
-					}
-				}(acrualResponse.Body)
+				defer acrualResponse.Body.Close()
 				if err != nil {
 					log.Println(err)
 				}
@@ -833,16 +800,12 @@ func selectAllUserWithdraw(db *sql.DB, r *http.Request) []UserWithdrawStruct {
 	if errCck != nil {
 		log.Println(errCck)
 	}
-	rows, err1 := db.Query("select ordernumber, withdrawn, gotimewithdrawn from balancetable where coockie=$1 order by sqltimewithdrawn asc", cck.Value)
+	q := `select ordernumber, withdrawn, gotimewithdrawn from balancetable where coockie=$1 order by sqltimewithdrawn asc`
+	rows, err1 := db.Query(q, cck.Value)
 	if err1 != nil {
 		log.Println(err1)
 	}
-	defer func(rows *sql.Rows) {
-		errRC := rows.Close()
-		if errRC != nil {
-			log.Println(errRC)
-		}
-	}(rows)
+	defer rows.Close()
 	var massUserWithdrawStruct []UserWithdrawStruct
 	for rows.Next() {
 		buff := UserWithdrawStruct{}

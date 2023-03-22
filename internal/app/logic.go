@@ -418,9 +418,9 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 			accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
 			acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
 			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-
+				errBC := Body.Close()
+				if errBC != nil {
+					log.Println(errBC)
 				}
 			}(acrualResponse.Body)
 			if err != nil {
@@ -474,6 +474,12 @@ func GetAllUsersOrderNumbers(db *sql.DB, r *http.Request) []RespGetOrderNumber {
 	if err1 != nil {
 		log.Println(err1)
 	}
+	defer func(rows *sql.Rows) {
+		errRC := rows.Close()
+		if errRC != nil {
+			log.Println(errRC)
+		}
+	}(rows)
 	for rows.Next() {
 		var oneNumber RespGetOrderNumber
 		errRow := rows.Scan(&oneNumber.Order, &oneNumber.UploadedAt)
@@ -518,9 +524,9 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 		accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
 		acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
 		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
-
+			errBC := Body.Close()
+			if errBC != nil {
+				log.Println(errBC)
 			}
 		}(acrualResponse.Body)
 		if err != nil {
@@ -530,9 +536,9 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 			for acrualResponse.StatusCode != 200 {
 				acrualResponse, err = http.Get(accrualBaseAdressReqTxt)
 				defer func(Body io.ReadCloser) {
-					err := Body.Close()
-					if err != nil {
-
+					errBC := Body.Close()
+					if errBC != nil {
+						log.Println(errBC)
 					}
 				}(acrualResponse.Body)
 				if err != nil {
@@ -627,6 +633,12 @@ func getAllWithdraw(db *sql.DB, r *http.Request) float64 {
 	if err1 != nil {
 		log.Println(err1)
 	}
+	defer func(rows *sql.Rows) {
+		errRC := rows.Close()
+		if errRC != nil {
+			log.Println(errRC)
+		}
+	}(rows)
 	var withdraw float64
 	for rows.Next() {
 		var buff float64
@@ -740,9 +752,9 @@ func getBalance(db *sql.DB, r *http.Request) float64 {
 		accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
 		acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
 		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
-
+			errBC := Body.Close()
+			if errBC != nil {
+				log.Println(errBC)
 			}
 		}(acrualResponse.Body)
 		if err != nil {
@@ -752,9 +764,9 @@ func getBalance(db *sql.DB, r *http.Request) float64 {
 			for acrualResponse.StatusCode != 200 {
 				acrualResponse, err = http.Get(accrualBaseAdressReqTxt)
 				defer func(Body io.ReadCloser) {
-					err := Body.Close()
-					if err != nil {
-
+					errBC := Body.Close()
+					if errBC != nil {
+						log.Println(errBC)
 					}
 				}(acrualResponse.Body)
 				if err != nil {
@@ -825,6 +837,12 @@ func selectAllUserWithdraw(db *sql.DB, r *http.Request) []UserWithdrawStruct {
 	if err1 != nil {
 		log.Println(err1)
 	}
+	defer func(rows *sql.Rows) {
+		errRC := rows.Close()
+		if errRC != nil {
+			log.Println(errRC)
+		}
+	}(rows)
 	var massUserWithdrawStruct []UserWithdrawStruct
 	for rows.Next() {
 		buff := UserWithdrawStruct{}

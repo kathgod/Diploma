@@ -420,7 +420,6 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 			if err != nil {
 				log.Println(err)
 			}
-			log.Println(acrualResponse.StatusCode)
 			if acrualResponse.StatusCode == 200 {
 				respB, err1 := io.ReadAll(acrualResponse.Body)
 				if err1 != nil {
@@ -433,12 +432,10 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 			} else if acrualResponse.StatusCode == 204 {
 				resp.Status = "NEW"
 				resp.Number = orderNumbers[i].Order
-				log.Println(orderNumbers[i].Order)
 			}
 			resp.Order = ""
 			resp.UploadedAt = orderNumbers[i].UploadedAt
 			resOrderNumbers = append(resOrderNumbers, resp)
-			log.Println(resp.Order, resp.Number, resp.Status, resp.UploadedAt, resp.Accrual)
 
 		}
 		byteFormatResp, errM := json.Marshal(resOrderNumbers)
@@ -544,7 +541,6 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 	}
 	withdraw := getAllWithdraw(db, r)
 	balanceStruct.Withdrawn = withdraw
-	log.Println(balanceStruct.Current, balanceStruct.Withdrawn)
 	byteFormatResp, errM := json.Marshal(balanceStruct)
 	if errM != nil {
 		log.Println(errM)
@@ -554,7 +550,7 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 }
 
 func createBalanceTable(db *sql.DB) *sql.DB {
-	query := `CREATE TABLE IF NOT EXISTS balancetable(coockie text, accrual float(2), withdrawn float(2), ordernumber text primary key)`
+	query := `CREATE TABLE IF NOT EXISTS balancetable(coockie text, accrual float(2), withdrawn float(2), ordernumber text primary key, gotimewithdrawn text, sqltimewithdrawn timestamptz)`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 	res, err := db.ExecContext(ctx, query)
@@ -570,7 +566,7 @@ func createBalanceTable(db *sql.DB) *sql.DB {
 }
 
 func insertInToBalanceTable(db *sql.DB, r *http.Request, resp RespGetOrderNumber) {
-	query := `INSERT INTO balancetable(coockie, accrual, ordernumber) VALUES ($1, $2, $3) ON CONFLICT (ordernumber) DO NOTHING`
+	query := `INSERT INTO balancetable(coockie, accrual, ordernumber) VALUES ($1, $2, $3)`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
 	cck, errCck := r.Cookie("userId")
@@ -623,4 +619,117 @@ func getAllWithdraw(db *sql.DB, r *http.Request) float64 {
 		withdraw = withdraw + buff
 	}
 	return withdraw
+}
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+
+func logicPostBalanceWithdraw(r *http.Request) int {
+	rawBsp, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Println(postBodyError)
+		return 400
+	}
+
+	balanceWithdrawInst := BalanceWithdraw{}
+	if err := json.Unmarshal(rawBsp, &balanceWithdrawInst); err != nil {
+		log.Println(postBodyError)
+		return 400
+	}
+
+	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(db)
+	if errDB != nil {
+		log.Println(dbOpenError)
+		return 500
+	}
+
+	flagAuthUser := authCheck(r, db)
+	if !flagAuthUser {
+		return 401
+	}
+
+	buff, errConv := strconv.Atoi(balanceWithdrawInst.Order)
+	if errConv != nil {
+		log.Println(errConv)
+	}
+	flagFormatOrder := Valid(buff)
+	if !flagFormatOrder {
+		return 422
+	}
+
+	balance := getBalance(db, r)
+	if balanceWithdrawInst.Sum > balance {
+		return 402
+	}
+
+	inserWithdrawtInToBalanceTable(db, balanceWithdrawInst, r)
+	return 200
+}
+
+type BalanceWithdraw struct {
+	Order string  `json:"order"`
+	Sum   float64 `json:"sum"`
+}
+
+func inserWithdrawtInToBalanceTable(db *sql.DB, balanceWithdrawInst BalanceWithdraw, r *http.Request) {
+	query := `INSERT INTO balancetable(coockie, ordernumber, withdrawn, gotimewithdrawn, sqltimewithdrawn) VALUES ($1, $2, $3, $4, now())`
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancelfunc()
+
+	cck, errCck := r.Cookie("userId")
+	if errCck != nil {
+		log.Println(errCck)
+	}
+
+	stmt, err0 := db.PrepareContext(ctx, query)
+	if err0 != nil {
+		log.Println(err0)
+	}
+	defer func(stmt *sql.Stmt) {
+		err1 := stmt.Close()
+		if err1 != nil {
+			log.Println(err1)
+		}
+	}(stmt)
+
+	now := time.Now()
+	timeStr := now.Format("2006-01-02T15:04:05Z07:00")
+
+	res, err2 := stmt.ExecContext(ctx, cck.Value, balanceWithdrawInst.Order, balanceWithdrawInst.Sum, timeStr)
+	if err2 != nil {
+		log.Println(err2)
+	}
+	_, err3 := res.RowsAffected()
+	if err3 != nil {
+		log.Println(err3)
+	}
+}
+
+func getBalance(db *sql.DB, r *http.Request) float64 {
+	cck, err := r.Cookie("userId")
+	if err != nil {
+		log.Println(err)
+	}
+
+	rows, err1 := db.Query("select accrual from balancetable where authcoockie = $1", cck.Value)
+	if err1 != nil {
+		log.Println(err1)
+	}
+	var balance float64
+	for rows.Next() {
+		var acrl float64
+		errRow := rows.Scan(acrl)
+		if errRow != nil {
+			log.Println(errRow)
+			continue
+		}
+		balance = balance + acrl
+	}
+	return balance
 }

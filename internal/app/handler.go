@@ -107,7 +107,7 @@ func GetBalance() func(w http.ResponseWriter, r *http.Request) {
 // PostBalanceWithdraw функция запроса на списание баллов с накопительного счёта в счёт оплаты нового заказа
 func PostBalanceWithdraw() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		resLF := 300
+		resLF := logicPostBalanceWithdraw(r)
 		switch {
 		case resLF == 200:
 			w.WriteHeader(http.StatusOK)

@@ -126,10 +126,12 @@ func PostBalanceWithdraw() func(w http.ResponseWriter, r *http.Request) {
 // GetUserWithdraw функция получения информации о выводе средств с накопительного счёта пользователем.
 func GetUserWithdraw() func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		resLF := 300
+		resLF, byteResp := logicGetUserWithdraw(r)
 		switch {
 		case resLF == 200:
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
+			w.Write(byteResp)
 		case resLF == 204:
 			w.WriteHeader(http.StatusNoContent)
 		case resLF == 401:

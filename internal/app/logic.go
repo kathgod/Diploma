@@ -750,3 +750,65 @@ func getBalance(db *sql.DB, r *http.Request) float64 {
 
 	return balanceStruct.Current
 }
+
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+func logicGetUserWithdraw(r *http.Request) (int, []byte) {
+	var emptyByte []byte
+	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(db)
+	if errDB != nil {
+		log.Println(dbOpenError)
+		return 500, emptyByte
+	}
+
+	flagAuthUser := authCheck(r, db)
+	if !flagAuthUser {
+		return 401, emptyByte
+	}
+
+	massUserWithdrawStruct := selectAllUserWithdraw(db, r)
+	if len(massUserWithdrawStruct) == 0 {
+		return 204, emptyByte
+	} else {
+		byteFormatResp, errM := json.Marshal(massUserWithdrawStruct)
+		if errM != nil {
+			log.Println(errM)
+		}
+		return 200, byteFormatResp
+	}
+
+}
+
+func selectAllUserWithdraw(db *sql.DB, r *http.Request) []UserWithdrawStruct {
+	cck, errCck := r.Cookie("userId")
+	if errCck != nil {
+		log.Println(errCck)
+	}
+	rows, err1 := db.Query("select ordernumber, withdrawn, gotimewithdrawn from balancetable where coockie=$1 order by sqltimewithdrawn asc", cck.Value)
+	if err1 != nil {
+		log.Println(err1)
+	}
+	var massUserWithdrawStruct []UserWithdrawStruct
+	for rows.Next() {
+		buff := UserWithdrawStruct{}
+		errRow := rows.Scan(&buff.Order, &buff.Sum, &buff.ProcessedAt)
+		if errRow != nil {
+			log.Println(errRow)
+			continue
+		}
+		massUserWithdrawStruct = append(massUserWithdrawStruct, buff)
+	}
+	return massUserWithdrawStruct
+}
+
+type UserWithdrawStruct struct {
+	Order       string `json:"order"`
+	Sum         string `json:"sum"`
+	ProcessedAt string `json:"processed_at"`
+}

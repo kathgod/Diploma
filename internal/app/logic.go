@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/hmac"
 	cr "crypto/rand"
@@ -8,6 +10,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	_ "github.com/lib/pq"
 	"io"
 	"log"
@@ -57,7 +60,7 @@ type RegisterStruct struct {
 func logicPostRegister(r *http.Request) (int, *http.Cookie) {
 	var emptcck *http.Cookie
 
-	rawBsp, err := io.ReadAll(r.Body)
+	rawBsp, err := decompress(io.ReadAll(r.Body))
 	if err != nil {
 		log.Println(postBodyError)
 		return 400, emptcck
@@ -184,7 +187,7 @@ func createCoockie() *http.Cookie {
 
 func logicPostLogin(r *http.Request) (int, *http.Cookie) {
 	var emptcck *http.Cookie
-	rawBsp, err := io.ReadAll(r.Body)
+	rawBsp, err := decompress(io.ReadAll(r.Body))
 	if err != nil {
 		log.Println(postBodyError)
 		return 400, emptcck
@@ -245,7 +248,7 @@ func logicPostOrders(r *http.Request) int {
 		return 500
 	}
 
-	rawBsp, err := io.ReadAll(r.Body)
+	rawBsp, err := decompress(io.ReadAll(r.Body))
 	if err != nil {
 		log.Println(postBodyError)
 		return 400
@@ -636,7 +639,7 @@ func getAllWithdraw(db *sql.DB, r *http.Request) float64 {
 //---------------------------------------------------------------------------
 
 func logicPostBalanceWithdraw(r *http.Request) int {
-	rawBsp, err := io.ReadAll(r.Body)
+	rawBsp, err := decompress(io.ReadAll(r.Body))
 	if err != nil {
 		log.Println(postBodyError)
 		return 400
@@ -762,6 +765,7 @@ func getBalance(db *sql.DB, r *http.Request) float64 {
 
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
+
 func logicGetUserWithdraw(r *http.Request) (int, []byte) {
 	var emptyByte []byte
 	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
@@ -824,4 +828,33 @@ type UserWithdrawStruct struct {
 	Order       string  `json:"order"`
 	Sum         float32 `json:"sum"`
 	ProcessedAt string  `json:"processed_at"`
+}
+
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+
+func decompress(data []byte, err0 error) ([]byte, error) {
+	if err0 != nil {
+		return nil, fmt.Errorf("error 0 %v", err0)
+	}
+
+	r, err1 := gzip.NewReader(bytes.NewReader(data))
+	if err1 != nil {
+		return data, nil
+	}
+	defer func(r *gzip.Reader) {
+		err := r.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(r)
+
+	var b bytes.Buffer
+
+	_, err := b.ReadFrom(r)
+	if err != nil {
+		return data, nil
+	}
+
+	return b.Bytes(), nil
 }

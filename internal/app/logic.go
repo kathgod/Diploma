@@ -25,6 +25,7 @@ const (
 	dbOpenError   = "Open DataBase Error"
 )
 
+// HandParam функция обработки флагов
 func HandParam(name string, flg *string) string {
 	res := ""
 	globEnv := os.Getenv(name)
@@ -44,31 +45,31 @@ func HandParam(name string, flg *string) string {
 	return res
 }
 
+// ResHandParam Структура флагов
 var ResHandParam struct {
 	DataBaseURI          string
 	AccrualSystemAddress string
 }
 
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-
+// RegisterStruct Структура данных регистрации
 type RegisterStruct struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 }
 
+// Функция регистрации пользователя
 func logicPostRegister(r *http.Request) (int, *http.Cookie) {
-	var emptcck *http.Cookie
+	var emptycookie *http.Cookie
 
 	rawBsp, err := decompress(io.ReadAll(r.Body))
 	if err != nil {
 		log.Println(postBodyError)
-		return 400, emptcck
+		return 400, emptycookie
 	}
 	segStrInst := RegisterStruct{}
 	if err := json.Unmarshal(rawBsp, &segStrInst); err != nil {
 		log.Println(postBodyError)
-		return 400, emptcck
+		return 400, emptycookie
 	}
 
 	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
@@ -81,7 +82,7 @@ func logicPostRegister(r *http.Request) (int, *http.Cookie) {
 	if errDB != nil {
 		log.Println(dbOpenError)
 		log.Println(errDB)
-		return 500, emptcck
+		return 500, emptycookie
 	}
 	db = CreateRegTable(db)
 	boolFlagExistRecord := IfExist(db, segStrInst)
@@ -90,15 +91,16 @@ func logicPostRegister(r *http.Request) (int, *http.Cookie) {
 	affRows, cck = AddRecordInRegTable(db, segStrInst)
 	if affRows == 0 {
 		if boolFlagExistRecord {
-			return 409, emptcck
+			return 409, emptycookie
 		} else {
-			return 500, emptcck
+			return 500, emptycookie
 		}
 	} else {
 		return 200, cck
 	}
 }
 
+// CreateRegTable Функция создания базы данных
 func CreateRegTable(db *sql.DB) *sql.DB {
 	query := `CREATE TABLE IF NOT EXISTS userRegTable(login text primary key, password text, authcoockie text, idcoockie text, keycoockie text)`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
@@ -115,6 +117,7 @@ func CreateRegTable(db *sql.DB) *sql.DB {
 	return db
 }
 
+// IfExist Функция проверки существования логина
 func IfExist(db *sql.DB, segStrInst RegisterStruct) bool {
 	check := new(string)
 	row := db.QueryRow("select login from userRegTable where login = $1", segStrInst.Login)
@@ -125,6 +128,7 @@ func IfExist(db *sql.DB, segStrInst RegisterStruct) bool {
 	}
 }
 
+// AddRecordInRegTable Функция добавления записи в таблицу авторизациии
 func AddRecordInRegTable(db *sql.DB, segStrInst RegisterStruct) (int64, *http.Cookie) {
 	query := `INSERT INTO userRegTable(login, password, authcoockie, idcoockie, keycoockie) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (login) DO NOTHING`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
@@ -155,6 +159,7 @@ func AddRecordInRegTable(db *sql.DB, segStrInst RegisterStruct) (int64, *http.Co
 	return rows, cck
 }
 
+// Структурный тип данных для создания куки файла
 type idKey struct {
 	id  string
 	key string
@@ -162,6 +167,7 @@ type idKey struct {
 
 var resIDKey = map[string]idKey{"0": {"0", "0"}}
 
+// Функция создания куки файла
 func createCoockie() *http.Cookie {
 	id := make([]byte, 16)
 	key := make([]byte, 16)
@@ -182,9 +188,7 @@ func createCoockie() *http.Cookie {
 	return cck
 }
 
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-
+// Функция авторизации пользователя
 func logicPostLogin(r *http.Request) (int, *http.Cookie) {
 	var emptcck *http.Cookie
 	rawBsp, err := decompress(io.ReadAll(r.Body))
@@ -222,6 +226,7 @@ func logicPostLogin(r *http.Request) (int, *http.Cookie) {
 	}
 }
 
+// GetCckValue Функция извлечения куки пользователя из БД
 func GetCckValue(db *sql.DB, segStrInst RegisterStruct) string {
 	check := new(string)
 	row := db.QueryRow("select authcoockie from userRegTable where login = $1", segStrInst.Login)
@@ -232,9 +237,7 @@ func GetCckValue(db *sql.DB, segStrInst RegisterStruct) string {
 	}
 }
 
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-
+// Функция записи заказа в систему
 func logicPostOrders(r *http.Request) int {
 	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
 	defer func(db *sql.DB) {
@@ -289,10 +292,12 @@ func logicPostOrders(r *http.Request) int {
 	}
 }
 
+// Valid Функция проверка корректности заказа
 func Valid(number int) bool {
 	return (number%10+checksum(number/10))%10 == 0
 }
 
+// Функция подсчета
 func checksum(number int) int {
 	var luhn int
 
@@ -312,6 +317,7 @@ func checksum(number int) int {
 	return luhn % 10
 }
 
+// CreateOrderTable Функция создания таблицы заказов
 func CreateOrderTable(db *sql.DB) *sql.DB {
 	query := `CREATE TABLE IF NOT EXISTS orderTable(ordernumber text primary key, authcoockie text, timecreate text, mydateandtime timestamptz)`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
@@ -328,6 +334,7 @@ func CreateOrderTable(db *sql.DB) *sql.DB {
 	return db
 }
 
+// Функция проверки авторизации
 func authCheck(r *http.Request, db *sql.DB) bool {
 	cck, err := r.Cookie("userId")
 	if err != nil {
@@ -343,6 +350,7 @@ func authCheck(r *http.Request, db *sql.DB) bool {
 	}
 }
 
+// CheckOrderTable Функция проверки наличия заказа в таблице
 func CheckOrderTable(orderNumber string, db *sql.DB) string {
 	var check string
 	row := db.QueryRow("select authcoockie from orderTable where ordernumber = $1", orderNumber)
@@ -354,6 +362,7 @@ func CheckOrderTable(orderNumber string, db *sql.DB) string {
 	}
 }
 
+// AddRecordInOrderTable Функция добавления записи в таблицу заказов
 func AddRecordInOrderTable(db *sql.DB, r *http.Request, orderNumber string) int64 {
 	query := `INSERT INTO orderTable(ordernumber, authcoockie, timecreate, mydateandtime) VALUES ($1, $2, $3, now()) ON CONFLICT (ordernumber) DO NOTHING`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
@@ -389,9 +398,7 @@ func AddRecordInOrderTable(db *sql.DB, r *http.Request, orderNumber string) int6
 	return rows
 }
 
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-
+// Функция получения списка заказов
 func logicGetOrders(r *http.Request) (int, []byte) {
 	var emptyByte []byte
 	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
@@ -456,6 +463,7 @@ func logicGetOrders(r *http.Request) (int, []byte) {
 
 }
 
+// RespGetOrderNumber Структурный тип для вывода ответа json
 type RespGetOrderNumber struct {
 	Number     string  `json:"number,omitempty"`
 	Order      string  `json:"order,omitempty"`
@@ -464,6 +472,7 @@ type RespGetOrderNumber struct {
 	UploadedAt string  `json:"uploaded_at"`
 }
 
+// GetAllUsersOrderNumbers Функция получения всех заказов пользователя
 func GetAllUsersOrderNumbers(db *sql.DB, r *http.Request) []RespGetOrderNumber {
 	cck, err := r.Cookie("userId")
 	if err != nil {
@@ -492,9 +501,7 @@ func GetAllUsersOrderNumbers(db *sql.DB, r *http.Request) []RespGetOrderNumber {
 	return orderNumbers
 }
 
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-
+// Функция получения текущего баланса пользователя
 func logicGetBalance(r *http.Request) (int, []byte) {
 	var emtyByte []byte
 	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
@@ -559,6 +566,7 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 
 }
 
+// Функция создания таблицы баланса
 func createBalanceTable(db *sql.DB) *sql.DB {
 	query := `CREATE TABLE IF NOT EXISTS balancetable(coockie text, accrual float(2) default 0, withdrawn float(2) default 0, ordernumber text primary key, gotimewithdrawn text, sqltimewithdrawn timestamptz)`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
@@ -575,6 +583,7 @@ func createBalanceTable(db *sql.DB) *sql.DB {
 	return db
 }
 
+// Функция записи в таблицу баланса
 func insertInToBalanceTable(db *sql.DB, r *http.Request, resp RespGetOrderNumber) {
 	query := `INSERT INTO balancetable(coockie, accrual, ordernumber) VALUES ($1, $2, $3) ON CONFLICT (ordernumber) DO NOTHING`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
@@ -603,11 +612,13 @@ func insertInToBalanceTable(db *sql.DB, r *http.Request, resp RespGetOrderNumber
 	}
 }
 
+// Balance Структурный тип для ответа json
 type Balance struct {
 	Current   float64 `json:"current"`
 	Withdrawn float64 `json:"withdrawn,omitempty"`
 }
 
+// Функция получения всех списаний
 func getAllWithdraw(db *sql.DB, r *http.Request) float64 {
 	cck, errCck := r.Cookie("userId")
 	if errCck != nil {
@@ -635,9 +646,7 @@ func getAllWithdraw(db *sql.DB, r *http.Request) float64 {
 	return withdraw
 }
 
-//---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-
+// Функция запроса на списание баллов
 func logicPostBalanceWithdraw(r *http.Request) int {
 	rawBsp, err := decompress(io.ReadAll(r.Body))
 	if err != nil {
@@ -682,16 +691,18 @@ func logicPostBalanceWithdraw(r *http.Request) int {
 		return 402
 	}
 
-	inserWithdrawtInToBalanceTable(db, balanceWithdrawInst, r)
+	insertWithdrawInToBalanceTable(db, balanceWithdrawInst, r)
 	return 200
 }
 
+// BalanceWithdraw Структурный тип запроса json
 type BalanceWithdraw struct {
 	Order string  `json:"order"`
 	Sum   float64 `json:"sum"`
 }
 
-func inserWithdrawtInToBalanceTable(db *sql.DB, balanceWithdrawInst BalanceWithdraw, r *http.Request) {
+// Функция изменения таблицы баланса
+func insertWithdrawInToBalanceTable(db *sql.DB, balanceWithdrawInst BalanceWithdraw, r *http.Request) {
 	query := `INSERT INTO balancetable(coockie, ordernumber, withdrawn, gotimewithdrawn, sqltimewithdrawn) VALUES ($1, $2, $3, $4, now()) ON CONFLICT (ordernumber) DO NOTHING`
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancelfunc()
@@ -725,6 +736,7 @@ func inserWithdrawtInToBalanceTable(db *sql.DB, balanceWithdrawInst BalanceWithd
 	}
 }
 
+// Функция получения баланса
 func getBalance(db *sql.DB, r *http.Request) float64 {
 
 	orderNumbers := GetAllUsersOrderNumbers(db, r)
@@ -732,18 +744,18 @@ func getBalance(db *sql.DB, r *http.Request) float64 {
 	for i := 0; i < len(orderNumbers); i++ {
 		resp := RespGetOrderNumber{}
 		accrualBaseAdressReqTxt := ResHandParam.AccrualSystemAddress + "/api/orders/" + orderNumbers[i].Order
-		acrualResponse, err := http.Get(accrualBaseAdressReqTxt)
+		accrualResponse, err := http.Get(accrualBaseAdressReqTxt)
 		if err != nil {
 			log.Println(err)
 		}
 
-		if acrualResponse.StatusCode == 204 {
+		if accrualResponse.StatusCode == 204 {
 			resp.Status = "NEW"
 			resp.Number = orderNumbers[i].Order
 		}
 
-		if acrualResponse.StatusCode == 200 {
-			respB, err1 := io.ReadAll(acrualResponse.Body)
+		if accrualResponse.StatusCode == 200 {
+			respB, err1 := io.ReadAll(accrualResponse.Body)
 			if err1 != nil {
 				log.Println(err1)
 			}
@@ -754,7 +766,7 @@ func getBalance(db *sql.DB, r *http.Request) float64 {
 
 		balanceStruct.Current = balanceStruct.Current + resp.Accrual
 		//resOrderNumbers = append(resOrderNumbers, resp)
-		errBC := acrualResponse.Body.Close()
+		errBC := accrualResponse.Body.Close()
 		if errBC != nil {
 			log.Println(errBC)
 		}
@@ -763,9 +775,7 @@ func getBalance(db *sql.DB, r *http.Request) float64 {
 	return balanceStruct.Current
 }
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-
+// Функция получения списаний пользователя
 func logicGetUserWithdraw(r *http.Request) (int, []byte) {
 	var emptyByte []byte
 	db, errDB := sql.Open("postgres", ResHandParam.DataBaseURI)
@@ -798,6 +808,7 @@ func logicGetUserWithdraw(r *http.Request) (int, []byte) {
 
 }
 
+// Функция выбора всех списаний из таблицы
 func selectAllUserWithdraw(db *sql.DB, r *http.Request) []UserWithdrawStruct {
 	cck, errCck := r.Cookie("userId")
 	if errCck != nil {
@@ -824,15 +835,14 @@ func selectAllUserWithdraw(db *sql.DB, r *http.Request) []UserWithdrawStruct {
 	return massUserWithdrawStruct
 }
 
+// UserWithdrawStruct Структурный тип ответа json
 type UserWithdrawStruct struct {
 	Order       string  `json:"order"`
 	Sum         float32 `json:"sum"`
 	ProcessedAt string  `json:"processed_at"`
 }
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
-
+// Функция обработких сжатых данных
 func decompress(data []byte, err0 error) ([]byte, error) {
 	if err0 != nil {
 		return nil, fmt.Errorf("error 0 %v", err0)

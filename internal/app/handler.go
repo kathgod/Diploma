@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 )
 
@@ -20,6 +21,8 @@ func PostRegister() func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusConflict)
 		case resLF == 500:
 			w.WriteHeader(http.StatusInternalServerError)
+		default:
+			log.Println("Invalid value of variable resLF")
 		}
 	}
 }
@@ -40,6 +43,8 @@ func PostLogin() func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 		case resLF == 500:
 			w.WriteHeader(http.StatusInternalServerError)
+		default:
+			log.Println("Invalid value of variable resLF")
 		}
 	}
 }
@@ -64,6 +69,8 @@ func PostOrders() func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 		case resLF == 500:
 			w.WriteHeader(http.StatusInternalServerError)
+		default:
+			log.Println("Invalid value of variable resLF")
 		}
 	}
 }
@@ -83,6 +90,8 @@ func GetOrders() func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 		case resLF == 500:
 			w.WriteHeader(http.StatusInternalServerError)
+		default:
+			log.Println("Invalid value of variable resLF")
 		}
 	}
 }
@@ -100,6 +109,8 @@ func GetBalance() func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 		case resLF == 500:
 			w.WriteHeader(http.StatusInternalServerError)
+		default:
+			log.Println("Invalid value of variable resLF")
 		}
 	}
 }
@@ -119,6 +130,8 @@ func PostBalanceWithdraw() func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 		case resLF == 500:
 			w.WriteHeader(http.StatusInternalServerError)
+		default:
+			log.Println("Invalid value of variable resLF")
 		}
 	}
 }
@@ -138,6 +151,8 @@ func GetUserWithdraw() func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 		case resLF == 500:
 			w.WriteHeader(http.StatusInternalServerError)
+		default:
+			log.Println("Invalid value of variable resLF")
 		}
 	}
 }

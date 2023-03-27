@@ -1,8 +1,6 @@
 package handler
 
-import (
-	"testing"
-)
+import "testing"
 
 func Test_checksum(t *testing.T) {
 	tests := []struct {

@@ -45,7 +45,7 @@ func logicGetBalance(r *http.Request) (int, []byte) {
 			resp.Status = "NEW"
 			resp.Number = orderNumbers[i].Order
 		}
-		if acrualResponse.StatusCode == http.StatusNoContent {
+		if acrualResponse.StatusCode == http.StatusOK {
 			respB, err1 := io.ReadAll(acrualResponse.Body)
 			if err1 != nil {
 				log.Println(err1)
